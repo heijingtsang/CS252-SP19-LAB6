@@ -37,22 +37,41 @@ class Admin(db.Model):
         self.email = email
 
 
-
 class Secrets(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    title = db.Column(db.String(250), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    submit_time = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow())
+    post_time = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow())
 
-
+    def __init__(self, title, content):
+        self.title = title
+        self.content = content
 
 
 class Queue(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    title = db.Column(db.String(250), nullable=False)
+    content = db.Column(db.text, nullable=False)
+    submit_time = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow())
 
-
+    def __init__(self, title, content):
+        self.title = title
+        self.content = content
 
 
 class Reported(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    title = db.Column(db.String(250), nullable=False)
+    content = db.Column(db.text, nullable=False)
+    reason = db.Column(db.text, nullable=False)
+    count = db.Column(db.Integer, nullable=False)
 
+    def __init__(self, title, content, reason, count):
+        self.title = title
+        self.content = content
+        self.reason = reason
+        self.count = count
 
 
 db.create_all()
