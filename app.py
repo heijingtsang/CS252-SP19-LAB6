@@ -1,8 +1,9 @@
 import datetime
-from flask import Flask, render_template, redirect, flash, url_for
+from flask import Flask, render_template, redirect, flash, url_for, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_talisman import Talisman
 from flask_login import current_user, login_user, login_manager, logout_user, login_required
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 app = Flask(__name__)
@@ -10,8 +11,21 @@ Talisman(app)
 app.secret_key = "CS252 Spring 2019 Lab 6"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cs252sp19lab6.db'
 db = SQLAlchemy(app)
-login = login_manager(app)
-login.login_view = 'login'
+login_manager = login_manager()
+login_manager.init_app(app)
+
+
+class Admin(db.Model):
+    username = db.Column(db.String(64), nullable=False)
+    password = db.Column(db.String(64), nullable=False)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+
 
 
 
@@ -40,6 +54,17 @@ def adminLogin():
     if current_user.is_authenticated:
         return redirect(url_for('adminQueue'))
 
+    if request.method == 'POST':
+        if not request.form['username'] or not request.form['password']:
+            flash('Please enter both your username and password.', 'error')
+        else:
+            user = Admin.get(request.form['username'])
+
+            if user is not None and user.check_password(request.form['password']):
+                login_user(user)
+                return redirect(url_for('adminQueue'))
+            else:
+                flash('Invalid login.', 'error')
 
     return render_template('admin_login.html')
 
