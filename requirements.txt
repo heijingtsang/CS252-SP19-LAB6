@@ -3,3 +3,4 @@ Flask-SQLAlchemy
 flask-talisman
 Flask-Login
 Flask-CKEditor
+Flask-WTF
