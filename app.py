@@ -1,23 +1,29 @@
-import datetime
-from flask import Flask, render_template, redirect, flash, url_for, request
+import datetime, os
+from flask import Flask, render_template, redirect, flash, url_for, request, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_talisman import Talisman
 from flask_login import current_user, login_user, login_manager, logout_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_ckeditor import CKEditor, upload_success, upload_fail
 
 
 app = Flask(__name__)
 Talisman(app)
+db = SQLAlchemy(app)
+login_manager = login_manager(app)
+# login_manager.init_app(app)
+ckeditor = CKEditor(app)
 app.secret_key = "CS252 Spring 2019 Lab 6"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cs252sp19lab6.db'
-db = SQLAlchemy(app)
-login_manager = login_manager()
-login_manager.init_app(app)
+app.config['CKEDITOR_SERVE_LOCAL'] = True
+app.config['CKEDITOR_HEIGHT'] = 400
+app.config['CKEDITOR_FILE_UPLOADER'] = 'upload'
 
 
 class Admin(db.Model):
     username = db.Column(db.String(64), nullable=False)
     password = db.Column(db.String(64), nullable=False)
+    email = db.Column(db.String(128), nullable=False)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -25,8 +31,31 @@ class Admin(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+    def __init__(self, username, password, email):
+        self.username = username
+        self.password = password
+        self.email = email
 
 
+
+class Secrets(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+
+
+
+class Queue(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+
+
+
+class Reported(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+
+
+db.create_all()
 
 
 @app.route('/')
@@ -36,7 +65,7 @@ def home():
 
 @app.route('/wall')
 def wall():
-    return render_template('wall.html')
+    return render_template('wall.html', secrets=Secrets.query.all())
 
 
 @app.route('/add', methods=['POST', 'GET'])
@@ -46,6 +75,19 @@ def add():
 
 @app.route('/report', methods=['POST', 'GET'])
 def report():
+    if request.method == 'POST':
+        if not request.form['id'] or not request.form['reason']:
+            flash('Please enter all the fields', 'error')
+        else:
+            id = request.form['id']
+            secret = Secrets.query.filter_by(id=id).first()
+            report = Reported(sid=secret)
+
+            db.session.add(report)
+            db.session.commit()
+            flash('Report has been sent to the administrator.')
+            return redirect(url_for('wall'))
+
     return render_template('report.html')
 
 
@@ -60,7 +102,7 @@ def adminLogin():
         else:
             user = Admin.get(request.form['username'])
 
-            if user is not None and user.check_password(request.form['password']):
+            if user.check_password(request.form['password']):
                 login_user(user)
                 return redirect(url_for('adminQueue'))
             else:
@@ -72,13 +114,13 @@ def adminLogin():
 @app.route('/admin/reported', methods=['POST', 'GET'])
 @login_required
 def adminReported():
-    return render_template('admin_reported.html')
+    return render_template('admin_reported.html', report=Reported.query.all())
 
 
 @app.route('/admin/queue', methods=['POST', 'GET'])
 @login_required
 def adminQueue():
-    return render_template('admin_queue.html')
+    return render_template('admin_queue.html', queue=Queue.query.all())
 
 
 @app.route('/admin/logout')
@@ -86,6 +128,26 @@ def adminQueue():
 def adminLogout():
     logout_user()
     return redirect(url_for('home'))
+
+
+@app.route('/files/<path:filename>')
+def uploaded_files(filename):
+    path = '/bin'
+    return send_from_directory(path, filename)
+
+
+@app.route('/upload', methods=['POST'])
+def upload():
+    f = request.files.get('upload')
+    extension = f.filename.split('.')[1].lower()
+
+    if extension not in ['jpg', 'gif', 'png', 'jpeg']:
+        return upload_fail(message='Image only.')
+
+    f.save(os.path.join('/bin', f.filename))
+    url = url_for('uploaded_files', filename=f.filename)
+
+    return upload_success(url=url)
 
 
 if __name__ == '__main__':
