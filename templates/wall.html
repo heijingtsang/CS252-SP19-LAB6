@@ -1,5 +1,32 @@
 {% extends "base.html" %}
-{% block title %}Home{% endblock %}
+{% block title %}Wall of Secrets{% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
 {% block content %}
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class=flashes>
+                {% for message in messages %}
+                    <div class="ui success message">
+                        <div class="content">
+                            <div class="header">Success</div>
+                            <p>{{ message }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    {% for secret in secrets %}
+        <div class="ui padded segment">
+            <p>ID: {{ secret['id'] }}</p>
+            <h3>{{ secret['title'] }}</h3>
+            <p>{{ secret['time'] }}</p>
+            <h5>{{ secret['content'] }}</h5>
+        </div>
+    {% endfor %}
 
 {% endblock %}
