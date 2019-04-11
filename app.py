@@ -19,6 +19,7 @@ app.config['CKEDITOR_SERVE_LOCAL'] = True
 app.config['CKEDITOR_HEIGHT'] = 400
 app.config['CKEDITOR_FILE_UPLOADER'] = 'upload'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+blacklist = []
 
 
 class Admin(db.Model):
@@ -71,6 +72,63 @@ class Reported(db.Model):
 
 db.create_all()
 
+"""
+Python user defined functions
+"""
+## first parameter (String): the text that may contain to-be-censored words
+## second parameter (List) : the list of blacklist words
+## return (String)         : the text with words censored in asterisks
+# def censorByWord(text, blacklist):
+#     textWords    = text.split()
+#     censoredText = []
+#     flag         = False
+#
+#     # iterate for each word in textWords
+#     for word in textWords:
+#         # iterate for each censored word in blacklist
+#         for blacklistedWord in blacklist:
+#             if word == blacklistedWord:
+#                 # replace the word with asterisk
+#                 censoredText.append("*" * len(word))
+#                 flag = True
+#                 break
+#             else:
+#                 # continue to the next iteration
+#                 continue
+#
+#         # if word is not a blacklisted word
+#         if flag == False:
+#             censoredText.append(word)
+#
+#         flag = False # set the flag to default
+#
+#     # return the list censoredText as a string with spaces between each censoredText elements
+#     return " ".join(censoredText)
+
+
+# first parameter (String): the text that may contain to-be-censored words
+# second parameter (List) : the list of blacklist words
+# return (String)         : the text with words censored in asterisks
+def censorBySubstring(text, blacklist):
+    # String in python are immutable
+    # iterate for each blacklistedWord in blacklist
+    for blacklistedWord in blacklist:
+        if text.find(blacklistedWord) != -1:
+            text = text.replace(blacklistedWord, "*" * len(blacklistedWord))
+
+    return text
+
+# first parameter (String): the name of the file to import the blacklists from
+# return (List of Strings): list of blacklist words from the imported file
+def getBlacklistWordsFromFile(fileName):
+    with open(fileName) as f:
+        content = f.readlines()
+
+    # remove leading and trailing white spaces
+    content = [x.strip() for x in content]
+
+    return content
+
 
 @app.route('/')
 def home():
@@ -93,6 +151,13 @@ def add():
             '''
             TODO: filtering part, now assume everything is clean.
             '''
+            blacklist = getBlacklistWordsFromFile("blacklist.txt")
+            content = censorBySubstring(content, blacklist)
+
+            # censorBySubstring is recommended over censorByWords because
+            # for example: '<p>fuck' or 'fuck</p>' does not get filtered out
+            # UNLESS we are able to get rid of the wrapping tags
+
             post = Secrets(content=content)
             db.session.add(post)
             db.session.commit()

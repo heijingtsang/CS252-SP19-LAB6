@@ -42,16 +42,28 @@ def censorBySubstring(text, blacklist):
 
     return text
 
+def getBlacklistWordsFromFile(fileName):
+    with open(fileName) as f:
+        content = f.readlines()
+        
+    content = [x.strip() for x in content]
+
+    return content
+
 
 
 
 if __name__ == '__main__':
     # print ("Hello World in main!")
-    text = input("Enter your text: ").lower()
+    # text = input("Enter your text: ").lower()
     # word = "one" # need to be a list
-    blacklist = ["one", "two", "three"]
+    # blacklist = ["one", "two", "three"]
+    fileName = "blacklist.txt"
+    blacklist = getBlacklistWordsFromFile(fileName)
+
+    print ("the black listed words are: " + str(blacklist))
 
     # censoredText = censorByWord(text, blacklist)
-    censoredText = censorBySubstring(text, blacklist)
-    print ("CensoredText: " + censoredText)
+    # censoredText = censorBySubstring(text, blacklist)
+    # print ("CensoredText: " + censoredText)
 
