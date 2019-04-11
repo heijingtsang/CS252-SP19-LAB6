@@ -31,17 +31,27 @@ def censorByWord(text, blacklist):
     return " ".join(censoredText)
 
 
-def censorBySubstring(text, word):
-    pass
+# first parameter (String): the text that may contain to-be-censored words
+# second parameter (List) : the list of blacklist words
+def censorBySubstring(text, blacklist):
+    # String in python are immutable
+    # iterate for each blacklistedWord in blacklist
+    for blacklistedWord in blacklist:
+        if text.find(blacklistedWord) != -1:
+            text = text.replace(blacklistedWord, "*" * len(blacklistedWord))
+
+    return text
+
 
 
 
 if __name__ == '__main__':
     # print ("Hello World in main!")
     text = input("Enter your text: ").lower()
-    word = "one" # need to be a list
+    # word = "one" # need to be a list
     blacklist = ["one", "two", "three"]
 
-    censoredText = censorByWord(text, blacklist)
-
+    # censoredText = censorByWord(text, blacklist)
+    censoredText = censorBySubstring(text, blacklist)
     print ("CensoredText: " + censoredText)
+
