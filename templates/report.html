@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Report{% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block body %}
+    <form class="ui equal width form" method="POST">
+        <div class="field">
+            <label>ID</label>
+            <input type="number" name="id" placeholder="ID">
+        </div>
+
+        <div class="field">
+            <label>Reason</label>
+            <input type="text" name="reason" placeholder="Reason">
+        </div>
+
+        <h3></h3>
+
+        <input class="ui teal submit button" type="submit" value="Submit">
+
+    </form>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class=flashes>
+                {% for message in messages %}
+                    <div class="ui icon error message">
+                        <i class="attention circle icon"></i>
+                        <div class="content">
+                            <div class="header">Error</div>
+                            <p>{{ message }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+{% endblock %}
