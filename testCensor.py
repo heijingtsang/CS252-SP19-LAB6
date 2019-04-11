@@ -1,18 +1,38 @@
 #!/usr/bin/env python3
 # print ("Hello World!")
 
-def censorByWord(text, word):
-    t = text.split()
-    n = []
+# first parameter (String): the text that may contain to-be-censored words
+# second parameter (List) : the list of blacklist words
+def censorByWord(text, blacklist):
+    textWords    = text.split()
+    censoredText = []
+    flag         = False
 
-    for i in t:
-        if(i == word):
-            n.append("*" * len(word))
-        else:
-            n.append(i)
+    # iterate for each word in textWords
+    for word in textWords:
+        # iterate for each censored word in blacklist
+        for blacklistedWord in blacklist:
+            if word == blacklistedWord:
+                # replace the word with asterisk
+                censoredText.append("*" * len(word))
+                flag = True
+                break
+            else:
+                # continue to the next iteration 
+                continue
 
-    return " ".join(n)
+        # if word is not a blacklisted word
+        if flag == False:
+            censoredText.append(word)
 
+        flag = False # set the flag to default
+
+    # return the list censoredText as a string with spaces between each censoredText elements
+    return " ".join(censoredText)
+
+
+def censorBySubstring(text, word):
+    pass
 
 
 
@@ -20,7 +40,8 @@ if __name__ == '__main__':
     # print ("Hello World in main!")
     text = input("Enter your text: ").lower()
     word = "one" # need to be a list
+    blacklist = ["one", "two", "three"]
 
-    censoredText = censor(text, word)
+    censoredText = censorByWord(text, blacklist)
 
-    print ("CensoredText:" + censoredText)
+    print ("CensoredText: " + censoredText)
