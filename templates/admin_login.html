@@ -1,38 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Admin Login</title>
+    <meta charset="UTF-8"/>
+    <link rel="stylesheet"
+          href="../static/semantic.css"/>
+    <script src="../static/semantic.js"></script>
+    <title>Login - Purdue Secrets Admin</title>
+    <style type="text/css">
+        body {
+            background-color: #DADADA;
+        }
+
+        body > .grid {
+            height: 100%;
+        }
+
+        .image {
+            margin-top: -100px;
+        }
+
+        .column {
+            max-width: 450px;
+        }
+    </style>
 </head>
 <body>
 <div class="ui middle aligned center aligned grid">
-  <div class="column">
-    <h2 class="ui teal image header">
-      <img src="../static/logo.png" class="image">
-      <div class="content">
-        Purdue Secrets Admin Login
-      </div>
-    </h2>
-    <form class="ui large form">
-      <div class="ui stacked segment">
-        <div class="field">
-          <div class="ui left icon input">
-            <i class="user icon"></i>
-            <input type="text" name="email" placeholder="Username">
-          </div>
-        </div>
-        <div class="field">
-          <div class="ui left icon input">
-            <i class="lock icon"></i>
-            <input type="password" name="password" placeholder="Password">
-          </div>
-        </div>
-        <div class="ui fluid large teal submit button">Login</div>
-      </div>
-
-      <div class="ui error message"></div>
-
-    </form>
+    <div class="column">
+        <h2 class="ui teal image header">
+            <img src="../static/logo.png" class="image">
+            <div class="content">
+                Purdue Secrets Admin Login
+            </div>
+        </h2>
+        <form class="ui large form" method="post">
+            <div class="ui stacked segment">
+                <div class="field">
+                    <div class="ui left icon input">
+                        <i class="user icon"></i>
+                        <input type="username" name="username" placeholder="Username">
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="ui left icon input">
+                        <i class="lock icon"></i>
+                        <input type="password" name="password" placeholder="Password">
+                    </div>
+                </div>
+                <input class="ui fluid large teal submit button" type="Submit" value="Login">
+            </div>
+        </form>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for message in messages %}
+                        <div class="ui icon error message">
+                            <i class="attention circle icon"></i>
+                            <div class="content">
+                                <div class="header">Error</div>
+                                <p>{{ message }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+    </div>
+</div>
 
 </body>
 </html>

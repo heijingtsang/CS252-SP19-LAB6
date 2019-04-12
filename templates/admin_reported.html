@@ -1,10 +1,49 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "admin_base.html" %}
+{% block title %}Reported Posts{% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block body %}
+    <meta http-equiv="refresh" content="30">
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class=flashes>
+                {% for message in messages %}
+                    <div class="ui success message">
+                        <div class="content">
+                            <div class="header">Success</div>
+                            <p>{{ message }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
 
-</body>
-</html>
+    <h3></h3>
+
+    <table class="ui single line table">
+        <thead>
+        <td>ID</td>
+        <td>Content</td>
+        <td>Reasons</td>
+        <td>Report Counts</td>
+        <td>Operations</td>
+        </thead>
+
+        {% for post in reports %}
+            <tr>
+                <td>{{ post['id'] }}</td>
+                <td>{{ post['content']|safe }}</td>
+                <td>{{ post['reason'] }}</td>
+                <td>{{ post['count'] }}</td>
+                <td>
+                    <a href="{{ url_for('deleteFromReported', sid=post['id']) }}">Delete</a>
+                    <p></p>
+                    <a href="{{ url_for('ignoreReported', sid=post['id']) }}">Ignore</a>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+
+{% endblock %}

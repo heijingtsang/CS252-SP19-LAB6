@@ -21,8 +21,10 @@
     {% endwith %}
 
     {% for secret in secrets %}
-        <div class="ui padded segment">
-            <p>ID: {{ secret['id'] }}</p>
+        <div class="ui padded container segment">
+            <td class="selectable">
+                <a href="{{ url_for('secret_details', sid=secret['id']) }}">#{{ secret['id'] }}</a>
+            </td>
             <h5>{{ secret['content']|safe }}</h5>
             <p>{{ secret['post_time'] }}</p>
         </div>

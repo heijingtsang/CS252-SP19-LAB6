@@ -1,41 +1,42 @@
-import datetime, os
+import datetime, os, uuid
 from flask import Flask, render_template, redirect, flash, url_for, request, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_talisman import Talisman
-from flask_login import current_user, login_user, LoginManager, logout_user, login_required
+from flask_login import current_user, login_user, LoginManager, logout_user, login_required, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_ckeditor import CKEditor, upload_success, upload_fail
 
-dirname = os.path.dirname(__file__)
+basedir = os.path.dirname(__file__)
 
 app = Flask(__name__)
-#Talisman(app)
-db = SQLAlchemy(app)
-login_manager = LoginManager(app)
-ckeditor = CKEditor(app)
 app.secret_key = "CS252 Spring 2019 Lab 6"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cs252sp19lab6.db'
 app.config['CKEDITOR_SERVE_LOCAL'] = True
 app.config['CKEDITOR_HEIGHT'] = 400
 app.config['CKEDITOR_FILE_UPLOADER'] = 'upload'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 4 * 1024 * 1024
+#Talisman(app)
+db = SQLAlchemy(app)
+login_manager = LoginManager(app)
+login_manager.session_protection = "strong"
+ckeditor = CKEditor(app)
 blacklist = []
 
 
-class Admin(db.Model):
-    username = db.Column(db.String(64), nullable=False, primary_key=True, unique=True)
+class Admin(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    username = db.Column(db.String(64), nullable=False, unique=True)
     password = db.Column(db.String(64), nullable=False)
     email = db.Column(db.String(128), nullable=False)
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+        self.password = generate_password_hash(password)
 
     def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+        return check_password_hash(self.password, password)
 
-    def __init__(self, username, password, email):
+    def __init__(self, username, email):
         self.username = username
-        self.password = password
         self.email = email
 
 
@@ -64,47 +65,18 @@ class Reported(db.Model):
     reason = db.Column(db.Text, nullable=False)
     count = db.Column(db.Integer, nullable=False)
 
-    def __init__(self, content, reason, count):
+    def __init__(self, id, content, reason, count):
+        self.id = id
         self.content = content
         self.reason = reason
         self.count = count
 
 
 db.create_all()
-
-
-"""
-Python user defined functions
-"""
-## first parameter (String): the text that may contain to-be-censored words
-## second parameter (List) : the list of blacklist words
-## return (String)         : the text with words censored in asterisks
-# def censorByWord(text, blacklist):
-#     textWords    = text.split()
-#     censoredText = []
-#     flag         = False
-#
-#     # iterate for each word in textWords
-#     for word in textWords:
-#         # iterate for each censored word in blacklist
-#         for blacklistedWord in blacklist:
-#             if word == blacklistedWord:
-#                 # replace the word with asterisk
-#                 censoredText.append("*" * len(word))
-#                 flag = True
-#                 break
-#             else:
-#                 # continue to the next iteration
-#                 continue
-#
-#         # if word is not a blacklisted word
-#         if flag == False:
-#             censoredText.append(word)
-#
-#         flag = False # set the flag to default
-#
-#     # return the list censoredText as a string with spaces between each censoredText elements
-#     return " ".join(censoredText)
+# master_admin = Admin('admin', 'tsangh@purdue.edu')
+# master_admin.set_password('password')
+# db.session.add(master_admin)
+# db.session.commit()
 
 
 # first parameter (String): the text that may contain to-be-censored words
@@ -158,7 +130,7 @@ def wall():
 
 @app.route('/wall/<int:sid>')
 def secret_details(sid):
-    return render_template('secret_details.html', info=Secrets.query.filter_by(sid=id).first())
+    return render_template('secret_details.html', secret=Secrets.query.filter_by(id=sid).first())
 
 
 @app.route('/add', methods=['POST', 'GET'])
@@ -180,12 +152,14 @@ def add():
             if isPostable(content):
                 post = Secrets(content=content)
                 db.session.add(post)
+                db.session.flush()
                 db.session.commit()
                 flash('Post Success!')
                 return redirect(url_for('wall'))
             else:
                 post = Queue(content=content)
                 db.session.add(post)
+                db.session.flush()
                 db.session.commit()
                 flash('Post has been sent to the administrator.')
                 return redirect(url_for('wall'))
@@ -205,18 +179,21 @@ def report():
             if not secret:
                 flash('Invalid ID.', 'error')
             elif not Reported.query.filter_by(id=id).first():
-                report = Reported(id=id, reason=reason, count=1)
+                report = Reported(id=id, content=secret.content, reason=reason, count=1)
                 db.session.add(report)
                 db.session.commit()
                 flash('Report has been sent to the administrator.')
                 return redirect(url_for('wall'))
             else:
                 report = Reported.query.filter_by(id=id).first()
-                data = report.data
-                data['count'] = data['count'] + 1
-                data['reason'] = data['reason'] + '\n' + request.form['reason']
-                report.data = data
-                db.session.merge(report)
+
+                count = report.count + 1
+                reason = report.reason + ', ' + request.form['reason']
+                new_report = Reported(id=id, content=secret.content, reason=reason, count=count)
+
+                db.session.delete(report)
+                db.session.flush()
+                db.session.add(new_report)
                 db.session.flush()
                 db.session.commit()
                 flash('Report has been sent to the administrator.')
@@ -234,9 +211,12 @@ def adminLogin():
         if not request.form['username'] or not request.form['password']:
             flash('Please enter both your username and password.', 'error')
         else:
-            user = Admin.get(request.form['username'])
-
-            if user.check_password(request.form['password']):
+            username = request.form['username']
+            user = Admin.query.filter_by(username=username).first()
+            password = request.form['password']
+            if user is None:
+                flash('User not found.', 'error')
+            elif user.check_password(password):
                 login_user(user)
                 return redirect(url_for('adminQueue'))
             else:
@@ -248,8 +228,8 @@ def adminLogin():
 @app.route('/admin/reported', methods=['POST', 'GET'])
 @login_required
 def adminReported():
-    report = Reported.query.order_by(Reported.count.desc()).all()
-    return render_template('admin_reported.html', report=report)
+    reports = Reported.query.order_by(Reported.count.desc()).all()
+    return render_template('admin_reported.html', reports=reports)
 
 
 @app.route('/admin/queue', methods=['POST', 'GET'])
@@ -271,11 +251,27 @@ def deleteFromReported(sid):
     s_post = Secrets.query.filter_by(id=sid).first()
     r_post = Reported.query.filter_by(id=sid).first()
     db.session.delete(s_post)
+    db.session.flush()
     db.session.delete(r_post)
+    db.session.flush()
     db.session.commit()
     flash('Post was successfully deleted.')
 
     return redirect(url_for('adminReported'))
+
+
+@app.route('/admin/reported/<int:sid>/ignore')
+@login_required
+def ignoreReported(sid):
+    post = Reported.query.filter_by(id=sid).first()
+    db.session.delete(post)
+    db.session.flush()
+    db.session.commit()
+    message = 'Report of #' + str(sid) + ' has been ignored.'
+    flash(message)
+
+    return redirect(url_for('adminReported'))
+
 
 
 @app.route('/admin/queue/<int:qid>/delete')
@@ -283,6 +279,7 @@ def deleteFromReported(sid):
 def deleteFromQueue(qid):
     post = Queue.query.filter_by(id=qid).first()
     db.session.delete(post)
+    db.session.flush()
     db.session.commit()
     flash('Post was successfully deleted.')
 
@@ -293,20 +290,22 @@ def deleteFromQueue(qid):
 @login_required
 def migrateFromQueue(qid):
     q_post = Queue.query.filter_by(id=qid).first()
-    s_post = Secrets(content=q_post.data['content'])
-    data = s_post.data
-    data['post_time'] = datetime.datetime.utcnow()
-    s_post.data = data
+    content = q_post.content
+    s_post = Secrets(content=content)
+    s_post.post_time = datetime.datetime.utcnow()
     db.session.add(s_post)
+    db.session.flush()
     db.session.delete(q_post)
+    db.session.flush()
     db.session.commit()
+    flash('Post was approved, and pushed to the wall.')
 
     return redirect(url_for('adminQueue'))
 
 
 @app.route('/files/<path:filename>')
 def uploaded_files(filename):
-    path = dirname + '/bin/'
+    path = basedir + '/bin/'
     return send_from_directory(path, filename)
 
 
@@ -317,12 +316,20 @@ def upload():
 
     if extension not in ['jpg', 'gif', 'png', 'jpeg']:
         return upload_fail(message='Image only.')
-    bin_path = dirname + '/bin/'
+    unique_filename = str(uuid.uuid4())
+    f.filename = unique_filename + '.' + extension
+    bin_path = basedir + '/bin/'
     f.save(os.path.join(bin_path, f.filename))
     url = url_for('uploaded_files', filename=f.filename)
 
     return upload_success(url=url)
 
 
+@login_manager.user_loader
+def getAdmin(id):
+    return Admin.query.get(int(id))
+
+
 if __name__ == '__main__':
     app.run()
+
