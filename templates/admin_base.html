@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% block head %}
+        <meta charset="UTF-8"/>
+        <link rel="stylesheet"
+              href="../static/semantic.css"/>
+        <script src="../static/semantic.js"></script>
+        <title>{% block title %}{% endblock %} - Admin - Purdue Secrets</title>
+    {% endblock %}
+</head>
+<body>
+<!-- Semantic UI Code -->
+<div class="ui container">
+    <div class="ui three item inverted menu">
+        <a class="item" href="{{ url_for('adminQueue') }}">
+            Queue
+        </a>
+        <a class="item" href="{{ url_for('adminReported') }}">
+            Reported
+        </a>
+        <a class="item" href="{{ url_for('adminLogout') }}">
+            Logout
+        </a>
+    </div>
+
+    <div id="content">{% block body %}{% endblock %}</div>
+    <h1></h1>
+    <div class="ui fixed vertical footer segment" id="footer">
+        {% block footer %}
+            &copy; Copyright 2019 by Hei Jing Tsang, James Kim</a>
+        {% endblock %}
+    </div>
+</div>
+</body>
+</html>

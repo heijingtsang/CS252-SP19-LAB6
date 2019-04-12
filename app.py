@@ -72,6 +72,7 @@ class Reported(db.Model):
 
 db.create_all()
 
+
 """
 Python user defined functions
 """
@@ -118,6 +119,7 @@ def censorBySubstring(text, blacklist):
 
     return text
 
+
 # first parameter (String): the name of the file to import the blacklists from
 # return (List of Strings): list of blacklist words from the imported file
 def getBlacklistWordsFromFile(fileName):
@@ -128,6 +130,7 @@ def getBlacklistWordsFromFile(fileName):
     content = [x.strip() for x in content]
 
     return content
+
 
 # first parameter (String): the text that is going to be be posted depending on the return value of this function
 # return (Boolean): return true if the text doesn't contain any asterisks, return fals if the text contains at least one asterisks
@@ -153,6 +156,11 @@ def wall():
     return render_template('wall.html', secrets=secrets)
 
 
+@app.route('/wall/<int:sid>')
+def secret_details(sid):
+    return render_template('secret_details.html', info=Secrets.query.filter_by(sid=id).first())
+
+
 @app.route('/add', methods=['POST', 'GET'])
 def add():
     if request.method == 'POST':
@@ -160,9 +168,7 @@ def add():
             flash('Post cannot be empty.', 'error')
         else:
             content = request.form.get('ckeditor')
-            '''
-            TODO: filtering part, now assume everything is clean.
-            '''
+
             blacklist = getBlacklistWordsFromFile("blacklist.txt")
             content = censorBySubstring(content, blacklist)
 
@@ -175,9 +181,14 @@ def add():
                 post = Secrets(content=content)
                 db.session.add(post)
                 db.session.commit()
+                flash('Post Success!')
                 return redirect(url_for('wall'))
             else:
-                flash('Too many censored words!')
+                post = Queue(content=content)
+                db.session.add(post)
+                db.session.commit()
+                flash('Post has been sent to the administrator.')
+                return redirect(url_for('wall'))
 
     return render_template('add.html')
 
@@ -237,7 +248,8 @@ def adminLogin():
 @app.route('/admin/reported', methods=['POST', 'GET'])
 @login_required
 def adminReported():
-    return render_template('admin_reported.html', report=Reported.query.all())
+    report = Reported.query.order_by(Reported.count.desc()).all()
+    return render_template('admin_reported.html', report=report)
 
 
 @app.route('/admin/queue', methods=['POST', 'GET'])
@@ -250,7 +262,46 @@ def adminQueue():
 @login_required
 def adminLogout():
     logout_user()
-    return redirect(url_for('home'))
+    return redirect(url_for('adminLogin'))
+
+
+@app.route('/admin/reported/<int:sid>/delete')
+@login_required
+def deleteFromReported(sid):
+    s_post = Secrets.query.filter_by(id=sid).first()
+    r_post = Reported.query.filter_by(id=sid).first()
+    db.session.delete(s_post)
+    db.session.delete(r_post)
+    db.session.commit()
+    flash('Post was successfully deleted.')
+
+    return redirect(url_for('adminReported'))
+
+
+@app.route('/admin/queue/<int:qid>/delete')
+@login_required
+def deleteFromQueue(qid):
+    post = Queue.query.filter_by(id=qid).first()
+    db.session.delete(post)
+    db.session.commit()
+    flash('Post was successfully deleted.')
+
+    return redirect(url_for('adminQueue'))
+
+
+@app.route('/admin/queue/<int:qid>/migrate')
+@login_required
+def migrateFromQueue(qid):
+    q_post = Queue.query.filter_by(id=qid).first()
+    s_post = Secrets(content=q_post.data['content'])
+    data = s_post.data
+    data['post_time'] = datetime.datetime.utcnow()
+    s_post.data = data
+    db.session.add(s_post)
+    db.session.delete(q_post)
+    db.session.commit()
+
+    return redirect(url_for('adminQueue'))
 
 
 @app.route('/files/<path:filename>')
