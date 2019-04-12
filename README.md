@@ -12,7 +12,7 @@
 
 ### The technologies that are used in this web applications are:
 - Python
-- Flask (and multiple packages which are designed for Flask, such as Flask-SQLAlchemy, Flask_Login, Flask-Talisman, Flask CKEditor)
+- Flask (and multiple packages which are designed for Flask, such as Flask-SQLAlchemy, Flask_Login, Flask-Talisman, Flask-CKEditor)
 - WTForms
 - Semantic-UI CSS Framework
 - sqlite3
