@@ -50,6 +50,15 @@ def getBlacklistWordsFromFile(fileName):
 
     return content
 
+def isPostable(text):
+    count = 0
+
+    for c in text:
+        if c == '*':
+            count+=1
+
+    return (count == 0)
+
 
 
 
@@ -61,9 +70,13 @@ if __name__ == '__main__':
     fileName = "blacklist.txt"
     blacklist = getBlacklistWordsFromFile(fileName)
 
-    print ("the black listed words are: " + str(blacklist))
+    # print ("the black listed words are: " + str(blacklist))
 
     # censoredText = censorByWord(text, blacklist)
     # censoredText = censorBySubstring(text, blacklist)
     # print ("CensoredText: " + censoredText)
 
+
+    test = "hello ***** hasdfasdfas **** asfasdfasd *"
+    res = isPostable(test)
+    print ("result: " + str(res))

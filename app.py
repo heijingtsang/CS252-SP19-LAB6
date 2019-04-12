@@ -129,6 +129,18 @@ def getBlacklistWordsFromFile(fileName):
 
     return content
 
+# first parameter (String): the text that is going to be be posted depending on the return value of this function
+# return (Boolean): return true if the text doesn't contain any asterisks, return fals if the text contains at least one asterisks
+# Make sure the user doesn't write any asterisks since it will be regarded as a censored character
+def isPostable(text):
+    count = 0
+
+    for c in text:
+        if c == '*':
+            count+=1
+
+    return (count == 0)
+
 
 @app.route('/')
 def home():
@@ -158,10 +170,14 @@ def add():
             # for example: '<p>fuck' or 'fuck</p>' does not get filtered out
             # UNLESS we are able to get rid of the wrapping tags
 
-            post = Secrets(content=content)
-            db.session.add(post)
-            db.session.commit()
-            return redirect(url_for('wall'))
+            # Redirect to either the admin or the DB
+            if isPostable(content):
+                post = Secrets(content=content)
+                db.session.add(post)
+                db.session.commit()
+                return redirect(url_for('wall'))
+            else:
+                flash('Too many censored words!')
 
     return render_template('add.html')
 
