@@ -26,7 +26,7 @@ blacklist = []
 class Admin(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(64), nullable=False, unique=True)
-    password = db.Column(db.String(64), nullable=False)
+    password = db.Column(db.String(256), nullable=False)
     email = db.Column(db.String(128), nullable=False)
 
     def set_password(self, password):
@@ -73,10 +73,10 @@ class Reported(db.Model):
 
 
 db.create_all()
-# master_admin = Admin('admin', 'tsangh@purdue.edu')
-# master_admin.set_password('password')
-# db.session.add(master_admin)
-# db.session.commit()
+master_admin = Admin('admin', 'tsangh@purdue.edu')
+master_admin.set_password('password')
+db.session.add(master_admin)
+db.session.commit()
 
 
 # first parameter (String): the text that may contain to-be-censored words
@@ -112,9 +112,9 @@ def isPostable(text):
 
     for c in text:
         if c == '*':
-            count+=1
+            count += 1
 
-    return (count == 0)
+    return count == 0
 
 
 @app.route('/')
@@ -301,6 +301,51 @@ def migrateFromQueue(qid):
     flash('Post was approved, and pushed to the wall.')
 
     return redirect(url_for('adminQueue'))
+
+
+@app.route('/admin/create_account', methods=['POST', 'GET'])
+@login_required
+def createAccount():
+    if request.method == 'POST':
+        if not request.form['username'] or not request.form['password'] or not request.form['confirm_password'] or not request.form['email']:
+            flash('Please enter all the fields accordingly.', 'error')
+        elif not request.form['password'] == request.form['confirm_password']:
+            message = 'Passwords don\'t match. Please enter again.'
+            flash(message, 'error')
+        else:
+            username = request.form['username']
+            password = request.form['password']
+            email = request.form['email']
+            admin = Admin(username, email)
+            admin.set_password(password)
+            db.session.add(admin)
+            db.session.commit()
+            flash('New account has been created.')
+            return redirect(url_for('adminQueue'))
+
+    return render_template('create_account.html')
+
+
+@app.route('/admin/password', methods=['POST', 'GET'])
+@login_required
+def changePassword():
+    if request.method == 'POST':
+        if not request.form['cur_pass'] or not request.form['new_pass'] or not request.form['confirm_pass']:
+            flash('Please enter all the fields accordingly.', 'error')
+        else:
+            admin = current_user
+            if not admin.check_password(request.form['cur_pass']):
+                flash('Wrong password, please enter again.', 'error')
+            elif not request.form['new_pass'] == request.form['confirm_pass']:
+                flash('New passwords not matching, please enter again.', 'error')
+            else:
+                admin.set_password(request.form['confirm_pass'])
+                db.session.add(admin)
+                db.session.commit()
+                flash('Password has been successfully updated.')
+                return redirect(url_for('adminQueue'))
+
+    return render_template('change_password.html')
 
 
 @app.route('/files/<path:filename>')

@@ -26,12 +26,18 @@
 <body>
 <!-- Semantic UI Code -->
 <div class="ui container">
-    <div class="ui three item inverted menu">
+    <div class="ui five item inverted menu">
         <a class="item" href="{{ url_for('adminQueue') }}">
             Queue
         </a>
         <a class="item" href="{{ url_for('adminReported') }}">
             Reported
+        </a>
+        <a class="item" href="{{ url_for('createAccount') }}">
+            Create Accounts
+        </a>
+        <a class="item" href="{{ url_for('changePassword') }}">
+            Change Password
         </a>
         <a class="item" href="{{ url_for('adminLogout') }}">
             Logout

@@ -1,0 +1,49 @@
+{% extends "admin_base.html" %}
+{% block title %}Create Account{% endblock %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block body %}
+
+    <form class="ui form" method="post">
+        <div class="field">
+            <div class="field">
+                <label>Email</label>
+                <input type="email" name="email" placeholder="abc123@purdue.edu">
+            </div>
+        </div>
+        <div class="field">
+            <label>Username</label>
+            <input type="text" name="username" placeholder="Username">
+        </div>
+        <div class="field">
+            <label>Password</label>
+            <input type="password" name="password">
+        </div>
+        <div class="field">
+            <div class="field">
+                <label>Confirm Password</label>
+                <input type="password" name="confirm_password">
+            </div>
+        </div>
+        <input class="ui teal submit button" type="submit" value="Submit">
+        <h3></h3>
+    </form>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class=flashes>
+                {% for message in messages %}
+                    <div class="ui icon error message">
+                        <i class="attention circle icon"></i>
+                        <div class="content">
+                            <div class="header">Error</div>
+                            <p>{{ message }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+{% endblock %}
