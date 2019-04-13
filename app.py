@@ -73,10 +73,10 @@ class Reported(db.Model):
 
 
 db.create_all()
-master_admin = Admin('admin', 'tsangh@purdue.edu')
-master_admin.set_password('password')
-db.session.add(master_admin)
-db.session.commit()
+# master_admin = Admin('admin', 'tsangh@purdue.edu')
+# master_admin.set_password('password')
+# db.session.add(master_admin)
+# db.session.commit()
 
 
 # first parameter (String): the text that may contain to-be-censored words
@@ -248,8 +248,13 @@ def adminLogout():
 @app.route('/admin/reported/<int:sid>/delete')
 @login_required
 def deleteFromReported(sid):
-    s_post = Secrets.query.filter_by(id=sid).first()
     r_post = Reported.query.filter_by(id=sid).first()
+
+    if r_post is None:
+        flash('This post has already been handled.', 'info')
+        return redirect(url_for('adminReported'))
+
+    s_post = Secrets.query.filter_by(id=sid).first()
     db.session.delete(s_post)
     db.session.flush()
     db.session.delete(r_post)
@@ -264,6 +269,11 @@ def deleteFromReported(sid):
 @login_required
 def ignoreReported(sid):
     post = Reported.query.filter_by(id=sid).first()
+
+    if post is None:
+        flash('This post has already been handled.', 'info')
+        return redirect(url_for('adminReported'))
+
     db.session.delete(post)
     db.session.flush()
     db.session.commit()
@@ -278,6 +288,11 @@ def ignoreReported(sid):
 @login_required
 def deleteFromQueue(qid):
     post = Queue.query.filter_by(id=qid).first()
+
+    if post is None:
+        flash('This post has already been handled.', 'info')
+        return redirect(url_for('adminQueue'))
+
     db.session.delete(post)
     db.session.flush()
     db.session.commit()
@@ -290,6 +305,11 @@ def deleteFromQueue(qid):
 @login_required
 def migrateFromQueue(qid):
     q_post = Queue.query.filter_by(id=qid).first()
+
+    if q_post is None:
+        flash('This post has already been handled.', 'info')
+        return redirect(url_for('adminQueue'))
+
     content = q_post.content
     s_post = Secrets(content=content)
     s_post.post_time = datetime.datetime.utcnow()
