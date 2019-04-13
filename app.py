@@ -283,7 +283,6 @@ def ignoreReported(sid):
     return redirect(url_for('adminReported'))
 
 
-
 @app.route('/admin/queue/<int:qid>/delete')
 @login_required
 def deleteFromQueue(qid):
