@@ -1,11 +1,12 @@
 import datetime, os, uuid
 from flask import Flask, render_template, redirect, flash, url_for, request, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
-from flask_talisman import Talisman
+#from flask_talisman import Talisman
 from flask_login import current_user, login_user, LoginManager, logout_user, login_required, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_ckeditor import CKEditor, upload_success, upload_fail
 from flask_wtf.csrf import CSRFProtect
+#from flask_sslify import SSLify
 
 basedir = os.path.dirname(__file__)
 blacklist = []
@@ -21,6 +22,7 @@ app.config['CKEDITOR_HEIGHT'] = 400
 app.config['CKEDITOR_FILE_UPLOADER'] = 'upload'
 app.config['MAX_CONTENT_LENGTH'] = 4 * 1024 * 1024
 #Talisman(app)
+#sslify = SSLify(app)
 db = SQLAlchemy(app)
 csrf = CSRFProtect(app)
 login_manager = LoginManager(app)
@@ -78,10 +80,10 @@ class Reported(db.Model):
 
 
 db.create_all()
-# master_admin = Admin('admin', 'tsangh@purdue.edu')
-# master_admin.set_password('password')
-# db.session.add(master_admin)
-# db.session.commit()
+#master_admin = Admin('admin', 'tsangh@purdue.edu')
+#master_admin.set_password('password')
+#db.session.add(master_admin)
+#db.session.commit()
 
 
 # first parameter (String): the text that may contain to-be-censored words
@@ -148,13 +150,16 @@ def add():
             blpath = basedir + "/blacklist.txt"
             blacklist = getBlacklistWordsFromFile(blpath)
             content = censorBySubstring(content, blacklist)
+            flag = False
+            if content.find(".jpg") or content.find(".gif") or content.find(".png") or content.find(".jpeg"):
+                flag = True
 
             # censorBySubstring is recommended over censorByWords because
             # for example: '<p>fuck' or 'fuck</p>' does not get filtered out
             # UNLESS we are able to get rid of the wrapping tags
 
             # Redirect to either the admin or the DB
-            if isPostable(content):
+            if isPostable(content) and flag == False:
                 post = Secrets(content=content)
                 db.session.add(post)
                 db.session.flush()
@@ -175,12 +180,17 @@ def add():
 @app.route('/report', methods=['POST', 'GET'])
 def report():
     if request.method == 'POST':
-        if not request.form['id'] or not request.form['reason']:
+        if not request.form['id'] or not request.form.get('ckeditor'):
             flash('Please enter all the fields', 'error')
         else:
             id = request.form['id']
             secret = Secrets.query.filter_by(id=id).first()
-            reason = request.form['reason']
+            reason = request.form.get('ckeditor')
+
+            blpath = basedir + "/blacklist.txt"
+            blacklist = getBlacklistWordsFromFile(blpath)
+            reason = censorBySubstring(reason, blacklist)
+
             if not secret:
                 flash('Invalid ID.', 'error')
             elif not Reported.query.filter_by(id=id).first():
@@ -193,7 +203,7 @@ def report():
                 report = Reported.query.filter_by(id=id).first()
 
                 count = report.count + 1
-                reason = report.reason + ', ' + request.form['reason']
+                reason = report.reason + ', ' + reason
                 new_report = Reported(id=id, content=secret.content, reason=reason, count=count)
 
                 db.session.delete(report)

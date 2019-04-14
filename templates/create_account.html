@@ -6,6 +6,7 @@
 {% block body %}
 
     <form class="ui form" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <div class="field">
             <div class="field">
                 <label>Email</label>

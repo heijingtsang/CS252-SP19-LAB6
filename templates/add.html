@@ -8,12 +8,13 @@
         <h3></h3>
         <h4>Write a secret, and post it by clicking the submit button!</h4>
         <h3></h3>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         {{ ckeditor.create() }}
         <h3></h3>
         <input class="ui teal submit button" type="submit" value="Submit">
     </form>
 
-    {{ ckeditor.load() }}
+    {{ ckeditor.load(custom_url=url_for('static', filename='ckeditor/ckeditor.js')) }}
     {{ ckeditor.config() }}
 
     {% with messages = get_flashed_messages() %}

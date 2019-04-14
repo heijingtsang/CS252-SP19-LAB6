@@ -5,21 +5,23 @@
 {% endblock %}
 {% block body %}
     <form class="ui equal width form" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <div class="field">
             <label>ID</label>
             <input type="number" name="id" placeholder="ID">
         </div>
-
-        <div class="field">
-            <label>Reason</label>
-            <input type="text" name="reason" placeholder="Reason">
-        </div>
-
+        <h3></h3>
+        <h4>Reason</h4>
+        <h3></h3>
+        {{ ckeditor.create() }}
         <h3></h3>
 
         <input class="ui teal submit button" type="submit" value="Submit">
 
     </form>
+
+    {{ ckeditor.load(custom_url=url_for('static', filename='ckeditor/ckeditor.js')) }}
+    {{ ckeditor.config() }}
 
     {% with messages = get_flashed_messages() %}
         {% if messages %}
