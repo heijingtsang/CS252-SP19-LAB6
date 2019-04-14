@@ -150,16 +150,16 @@ def add():
             blpath = basedir + "/blacklist.txt"
             blacklist = getBlacklistWordsFromFile(blpath)
             content = censorBySubstring(content, blacklist)
-            flag = False
+            flag = True
             if content.find(".jpg") or content.find(".gif") or content.find(".png") or content.find(".jpeg"):
-                flag = True
+                flag = False
 
             # censorBySubstring is recommended over censorByWords because
             # for example: '<p>fuck' or 'fuck</p>' does not get filtered out
             # UNLESS we are able to get rid of the wrapping tags
 
             # Redirect to either the admin or the DB
-            if isPostable(content) and flag == False:
+            if isPostable(content) and flag:
                 post = Secrets(content=content)
                 db.session.add(post)
                 db.session.flush()
