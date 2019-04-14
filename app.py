@@ -5,22 +5,27 @@ from flask_talisman import Talisman
 from flask_login import current_user, login_user, LoginManager, logout_user, login_required, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_ckeditor import CKEditor, upload_success, upload_fail
+from flask_wtf.csrf import CSRFProtect
 
 basedir = os.path.dirname(__file__)
+blacklist = []
 
 app = Flask(__name__)
 app.secret_key = "CS252 Spring 2019 Lab 6"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cs252sp19lab6.db'
 app.config['CKEDITOR_SERVE_LOCAL'] = True
+app.config['CKEDITOR_ENABLE_CSRF'] = True
+app.config['CKEDITOR_EXTRA_PLUGINS'] = ['image2']
+app.config['SECRET_KEY'] = 'CS252 Spring 2019 Lab 6'
 app.config['CKEDITOR_HEIGHT'] = 400
 app.config['CKEDITOR_FILE_UPLOADER'] = 'upload'
 app.config['MAX_CONTENT_LENGTH'] = 4 * 1024 * 1024
 #Talisman(app)
 db = SQLAlchemy(app)
+csrf = CSRFProtect(app)
 login_manager = LoginManager(app)
 login_manager.session_protection = "strong"
 ckeditor = CKEditor(app)
-blacklist = []
 
 
 class Admin(db.Model, UserMixin):
@@ -140,8 +145,8 @@ def add():
             flash('Post cannot be empty.', 'error')
         else:
             content = request.form.get('ckeditor')
-
-            blacklist = getBlacklistWordsFromFile("blacklist.txt")
+            blpath = basedir + "/blacklist.txt"
+            blacklist = getBlacklistWordsFromFile(blpath)
             content = censorBySubstring(content, blacklist)
 
             # censorBySubstring is recommended over censorByWords because
@@ -281,6 +286,7 @@ def ignoreReported(sid):
     flash(message)
 
     return redirect(url_for('adminReported'))
+
 
 
 @app.route('/admin/queue/<int:qid>/delete')
