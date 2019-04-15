@@ -300,7 +300,7 @@ def adminLogout():
 
 @app.route('/admin/reported/<int:sid>/delete')
 @login_required
-def deleteFromReported(sid):
+def deleteFromReported(sid, email):
     r_post = Reported.query.filter_by(id=sid).first()
 
     if r_post is None:
@@ -327,7 +327,7 @@ def deleteFromReported(sid):
 
 @app.route('/admin/reported/<int:sid>/ignore')
 @login_required
-def ignoreReported(sid):
+def ignoreReported(sid, email):
     post = Reported.query.filter_by(id=sid).first()
 
     if post is None:
@@ -353,7 +353,7 @@ def ignoreReported(sid):
 
 @app.route('/admin/queue/<int:qid>/delete')
 @login_required
-def deleteFromQueue(qid):
+def deleteFromQueue(qid, email):
     post = Queue.query.filter_by(id=qid).first()
 
     if post is None:
@@ -376,7 +376,7 @@ def deleteFromQueue(qid):
 
 @app.route('/admin/queue/<int:qid>/migrate')
 @login_required
-def migrateFromQueue(qid):
+def migrateFromQueue(qid, email):
     q_post = Queue.query.filter_by(id=qid).first()
 
     if q_post is None:
