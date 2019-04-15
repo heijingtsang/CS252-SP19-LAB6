@@ -69,16 +69,21 @@ class Queue(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     content = db.Column(db.Text, nullable=False)
     submit_time = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow())
+    email = db.Column(db.Text)
 
     def __init__(self, content):
         self.content = content
 
+    def __init__(self, content, email):
+        self.content = content
+        self.email = email
 
 class Reported(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     content = db.Column(db.Text, nullable=False)
     reason = db.Column(db.Text, nullable=False)
     count = db.Column(db.Integer, nullable=False)
+    email = db.Column(db.Text)
 
     def __init__(self, id, content, reason, count):
         self.id = id
@@ -86,6 +91,12 @@ class Reported(db.Model):
         self.reason = reason
         self.count = count
 
+    def __init__(self, id, content, reason, count, email):
+        self.id = id
+        self.content = content
+        self.reason = reason
+        self.count = count
+        self.email = email
 
 db.create_all()
 #master_admin = Admin('admin', 'tsangh@purdue.edu')
