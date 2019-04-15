@@ -150,6 +150,7 @@ def home():
 
 @app.route('/wall')
 def wall():
+    # sort id in descending order so at the top of the page it has the latest post
     secrets = Secrets.query.order_by(Secrets.id.desc()).all()
     return render_template('wall.html', secrets=secrets)
 
