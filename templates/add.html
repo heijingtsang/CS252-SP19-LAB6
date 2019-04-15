@@ -11,6 +11,9 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         {{ ckeditor.create() }}
         <h3></h3>
+        Your email (Optional):
+        <input type="text" name="emailTextFieldAdd" placeholder="yourEmail@gmail.com">
+        <h3></h3>
         <input class="ui teal submit button" type="submit" value="Submit">
     </form>
 
