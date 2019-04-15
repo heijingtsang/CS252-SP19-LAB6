@@ -4,6 +4,7 @@
     {{ super() }}
 {% endblock %}
 {% block body %}
+    <!-- Refresh every 30 seconds -->
     <meta http-equiv="refresh" content="30">
     {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -20,6 +21,7 @@
         {% endif %}
     {% endwith %}
 
+    <!-- For each secret post in the list of secrets -->
     {% for secret in secrets %}
         <div class="ui padded container segment">
             <td class="selectable">
@@ -28,11 +30,14 @@
             <h5>{{ secret['content']|safe }}</h5>
             <p>{{ secret['post_time'] }}</p>
 
+            <!-- Clickable Facebook Icon -->
             <a href="https://www.facebook.com/sharer/sharer.php?u=https://tsangh.pythonanywhere.com/wall/{{ secret['id'] }}" target="_blank">
                 <button class="ui circular facebook icon button">
                     <i class="facebook icon"></i>
                 </button>
             </a>
+
+            <!-- Clickable Twitter Icon -->
             <a href="https://twitter.com/share?url=https://tsangh.pythonanywhere.com/wall/{{ secret['id'] }}" target="_blank">
                 <button class="ui circular twitter icon button">
                     <i class="twitter icon"></i>
