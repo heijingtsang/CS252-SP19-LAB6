@@ -29,13 +29,17 @@
             <p>{{ secret['post_time'] }}</p>
 
             <a href="https://www.facebook.com/sharer/sharer.php?u=https://tsangh.pythonanywhere.com/wall/{{ secret['id'] }}" target="_blank">
-                Share on Facebook
+                <button class="ui circular facebook icon button">
+                    <i class="facebook icon"></i>
+                </button>
             </a>
 
             <br>
 
             <a href="https://twitter.com/share?url=https://tsangh.pythonanywhere.com/wall/{{ secret['id'] }}" target="_blank">
-                Share on Twitter
+                <button class="ui circular twitter icon button">
+                    <i class="twitter icon"></i>
+                </button>
             </a>
 
         </div>
