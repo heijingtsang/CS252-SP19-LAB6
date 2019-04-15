@@ -151,7 +151,7 @@ def add():
             blacklist = getBlacklistWordsFromFile(blpath)
             content = censorBySubstring(content, blacklist)
             flag = True
-            if content.find(".jpg") or content.find(".gif") or content.find(".png") or content.find(".jpeg"):
+            if content.find(".jpg") != -1 or content.find(".jpeg") != -1 or content.find(".gif") != -1 or content.find(".png") != -1:
                 flag = False
 
             # censorBySubstring is recommended over censorByWords because
