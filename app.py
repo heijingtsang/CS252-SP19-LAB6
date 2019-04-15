@@ -307,6 +307,8 @@ def deleteFromReported(sid, email):
         flash('This post has already been handled.', 'info')
         return redirect(url_for('adminReported'))
 
+    emailDest = Reported.query.filter_by(email=email).first()
+
     s_post = Secrets.query.filter_by(id=sid).first()
     db.session.delete(s_post)
     db.session.flush()
@@ -315,7 +317,6 @@ def deleteFromReported(sid, email):
     db.session.commit()
     flash('Post was successfully deleted.')
 
-    emailDest = Reported.query.filter_by(email=email).first()
     if emailDest != "":
         msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[emailDest])
         msg.body = """We are sending this email to inform that your post has been reported by other users 
@@ -334,13 +335,14 @@ def ignoreReported(sid, email):
         flash('This post has already been handled.', 'info')
         return redirect(url_for('adminReported'))
 
+    emailDest = Reported.query.filter_by(email=email).first()
+
     db.session.delete(post)
     db.session.flush()
     db.session.commit()
     message = 'Report of #' + str(sid) + ' has been ignored.'
     flash(message)
 
-    emailDest = Reported.query.filter_by(email=email).first()
     if emailDest != "":
         msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[emailDest])
         msg.body = """We are sending this email to inform that your post has been reported by other users 
