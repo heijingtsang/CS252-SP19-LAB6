@@ -168,14 +168,14 @@ def add():
         else:
             content = request.form.get('ckeditor')
             blpath = basedir + "/blacklist.txt"
-            blacklist = getBlacklistWordsFromFile(blpath)
-            content = censorBySubstring(content, blacklist)
+            blacklist = getBlacklistWordsFromFile(blpath)   # instantiate the blacklist from the proper path
+            content = censorBySubstring(content, blacklist) # censor the content by filtering out words and replacing them with asterisks
             flag = True
             if content.find(".jpg") != -1 or content.find(".jpeg") != -1 or content.find(".gif") != -1 or content.find(".png") != -1:
                 flag = False
 
-            email = request.form.get('emailTextFieldAdd')
-            emailFlag = False
+            email = request.form.get('emailTextFieldAdd')   # get the email from the optional email text field from add.html
+            emailFlag = False                               # check if email was submitted and set emailFlag
             if email == "":
                 emailFlag = False
                 # flash("email field is empty!")
@@ -189,6 +189,7 @@ def add():
 
             # Redirect to either the admin or the DB
             if isPostable(content) and flag and emailFlag is False:
+                # Directly post to the wall
                 post = Secrets(content=content)
                 db.session.add(post)
                 db.session.flush()
@@ -196,6 +197,7 @@ def add():
                 flash('Post Success!')
                 return redirect(url_for('wall'))
             else:
+                # Send the content to the queue so the admin can review and confirm the content
                 post = Queue(content=content, email=email)
                 db.session.add(post)
                 db.session.flush()
