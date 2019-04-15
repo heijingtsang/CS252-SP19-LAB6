@@ -27,6 +27,11 @@
             </td>
             <h5>{{ secret['content']|safe }}</h5>
             <p>{{ secret['post_time'] }}</p>
+
+            <a href="https://www.facebook.com/sharer/sharer.php?u=https://tsangh.pythonanywhere.com/wall/{{ secret['id'] }}" target="_blank">
+                Share on Facebook
+            </a>
+
         </div>
     {% endfor %}
 
