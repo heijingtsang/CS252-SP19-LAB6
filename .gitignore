@@ -5,4 +5,4 @@ venv
 testignore.txt
 testignore2.txt
 blacklist.txt
-password.py
+password.txt
