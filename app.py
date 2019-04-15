@@ -360,12 +360,13 @@ def deleteFromQueue(qid, email):
         flash('This post has already been handled.', 'info')
         return redirect(url_for('adminQueue'))
 
+    emailDest = Queue.query.filter_by(email=email).first()
+
     db.session.delete(post)
     db.session.flush()
     db.session.commit()
     flash('Post was successfully deleted.')
 
-    emailDest = Reported.query.filter_by(email=email).first()
     if emailDest != "":
         msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[emailDest])
         msg.body = """We are sending this email to inform that after the examinations from the admins, we decided to delete your post"""
@@ -383,6 +384,9 @@ def migrateFromQueue(qid, email):
         flash('This post has already been handled.', 'info')
         return redirect(url_for('adminQueue'))
 
+    emailDest = Queue.query.filter_by(email=email).first()
+    postID = q_post.id
+
     content = q_post.content
     s_post = Secrets(content=content)
     s_post.post_time = datetime.datetime.utcnow()
@@ -393,10 +397,10 @@ def migrateFromQueue(qid, email):
     db.session.commit()
     flash('Post was approved, and pushed to the wall.')
 
-    emailDest = Reported.query.filter_by(email=email).first()
     if emailDest != "":
         msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[emailDest])
-        msg.body = """We are sending this email to inform that after the examinations from the admins, we decided to approve your post"""
+        msg.body = """We are sending this email to inform that after the examinations from the admins, we decided to approve your post.\n
+        The link to your approve post: https://tsangh.pythonanywhere.com/wall/""" + str(postID)
         mail.send(msg)
 
     return redirect(url_for('adminQueue'))
