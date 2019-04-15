@@ -315,6 +315,13 @@ def deleteFromReported(sid):
     db.session.commit()
     flash('Post was successfully deleted.')
 
+    emailDest = Reported.query.filter_by(email=email).first()
+    if emailDest != "":
+        msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[emailDest])
+        msg.body = """We are sending this email to inform that your post has been reported by other users 
+        and after the examinations from the admins, we decided to delete your post"""
+        mail.send(msg)
+
     return redirect(url_for('adminReported'))
 
 
@@ -333,6 +340,13 @@ def ignoreReported(sid):
     message = 'Report of #' + str(sid) + ' has been ignored.'
     flash(message)
 
+    emailDest = Reported.query.filter_by(email=email).first()
+    if emailDest != "":
+        msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[emailDest])
+        msg.body = """We are sending this email to inform that your post has been reported by other users 
+            and after the examinations from the admins, we decided to keep your post on the wall"""
+        mail.send(msg)
+
     return redirect(url_for('adminReported'))
 
 
@@ -350,6 +364,12 @@ def deleteFromQueue(qid):
     db.session.flush()
     db.session.commit()
     flash('Post was successfully deleted.')
+
+    emailDest = Reported.query.filter_by(email=email).first()
+    if emailDest != "":
+        msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[emailDest])
+        msg.body = """We are sending this email to inform that after the examinations from the admins, we decided to delete your post"""
+        mail.send(msg)
 
     return redirect(url_for('adminQueue'))
 
@@ -372,6 +392,12 @@ def migrateFromQueue(qid):
     db.session.flush()
     db.session.commit()
     flash('Post was approved, and pushed to the wall.')
+
+    emailDest = Reported.query.filter_by(email=email).first()
+    if emailDest != "":
+        msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[emailDest])
+        msg.body = """We are sending this email to inform that after the examinations from the admins, we decided to approve your post"""
+        mail.send(msg)
 
     return redirect(url_for('adminQueue'))
 
