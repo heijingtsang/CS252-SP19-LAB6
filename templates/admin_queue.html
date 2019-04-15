@@ -35,10 +35,11 @@
                 <td>{{ post['id'] }}</td>
                 <td>{{ post['content']|safe }}</td>
                 <td>{{ post['submit_time'] }}</td>
+                <td>{{ post['email']}}</td>
                 <td>
-                    <a href="{{ url_for('migrateFromQueue', qid=post['id']) }}">Approve</a>
+                    <a href="{{ url_for('migrateFromQueue', qid=post['id']), email=post['email'] }}">Approve</a>
                     <p></p>
-                    <a href="{{ url_for('deleteFromQueue', qid=post['id']) }}">Reject</a>
+                    <a href="{{ url_for('deleteFromQueue', qid=post['id']), email=post['email'] }}">Reject</a>
                 </td>
             </tr>
         {% endfor %}
