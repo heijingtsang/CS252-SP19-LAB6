@@ -173,12 +173,21 @@ def add():
             if content.find(".jpg") != -1 or content.find(".jpeg") != -1 or content.find(".gif") != -1 or content.find(".png") != -1:
                 flag = False
 
+            email = request.form.get('emailTextFieldAdd')
+            emailFlag = False
+            if email == "":
+                emailFlag = False
+                # flash("email field is empty!")
+            else:
+                emailFlag = True
+                # flash("email field is not empty" + email)
+
             # censorBySubstring is recommended over censorByWords because
             # for example: '<p>fuck' or 'fuck</p>' does not get filtered out
             # UNLESS we are able to get rid of the wrapping tags
 
             # Redirect to either the admin or the DB
-            if isPostable(content) and flag:
+            if isPostable(content) and flag and emailFlag is False:
                 post = Secrets(content=content)
                 db.session.add(post)
                 db.session.flush()
@@ -186,7 +195,7 @@ def add():
                 flash('Post Success!')
                 return redirect(url_for('wall'))
             else:
-                post = Queue(content=content)
+                post = Queue(content=content, email=email)
                 db.session.add(post)
                 db.session.flush()
                 db.session.commit()
@@ -205,6 +214,12 @@ def report():
             id = request.form['id']
             secret = Secrets.query.filter_by(id=id).first()
             reason = request.form.get('ckeditor')
+            email = request.form.get("emailTextFieldReport")
+            emailFlag = False
+            if email == "":
+                emailFlag = False
+            else:
+                emailFlag = True
 
             blpath = basedir + "/blacklist.txt"
             blacklist = getBlacklistWordsFromFile(blpath)
@@ -213,7 +228,11 @@ def report():
             if not secret:
                 flash('Invalid ID.', 'error')
             elif not Reported.query.filter_by(id=id).first():
-                report = Reported(id=id, content=secret.content, reason=reason, count=1)
+                if emailFlag:
+                    report = Reported(id=id, content=secret.content, reason=reason, count=1, email=email)
+                else:
+                    report = Reported(id=id, content=secret.content, reason=reason, count=1)
+
                 db.session.add(report)
                 db.session.commit()
                 flash('Report has been sent to the administrator.')
@@ -223,7 +242,7 @@ def report():
 
                 count = report.count + 1
                 reason = report.reason + ', ' + reason
-                new_report = Reported(id=id, content=secret.content, reason=reason, count=count)
+                new_report = Reported(id=id, content=secret.content, reason=reason, count=count) # not sure about the email attribute here
 
                 db.session.delete(report)
                 db.session.flush()
