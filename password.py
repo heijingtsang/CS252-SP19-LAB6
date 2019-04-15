@@ -1,0 +1,1 @@
+app.config['MAIL_PASSWORD'] = 'lawsonB131'

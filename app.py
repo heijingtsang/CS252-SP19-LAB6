@@ -8,6 +8,7 @@ from flask_ckeditor import CKEditor, upload_success, upload_fail
 from flask_wtf.csrf import CSRFProtect
 #from flask_sslify import SSLify
 from flask_mail import Mail, Message
+import password
 
 basedir = os.path.dirname(__file__)
 blacklist = []
@@ -33,7 +34,6 @@ ckeditor = CKEditor(app)
 app.config['MAIL_SERVER']='smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USERNAME'] = 'purdueSecrets2019@gmail.com'
-app.config['MAIL_PASSWORD'] = 'lawsonB131'
 app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = True
 mail = Mail(app)
