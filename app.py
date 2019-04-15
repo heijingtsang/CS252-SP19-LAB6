@@ -217,23 +217,23 @@ def report():
             id = request.form['id']
             secret = Secrets.query.filter_by(id=id).first()
             reason = request.form.get('ckeditor')
-            email = request.form.get("emailTextFieldReport")
-            emailFlag = False
+            email = request.form.get("emailTextFieldReport")    # get the email from the optional email text field from report.html
+            emailFlag = False                                   # check if email was submitted and set emailFlag
             if email == "":
                 emailFlag = False
             else:
                 emailFlag = True
 
             blpath = basedir + "/blacklist.txt"
-            blacklist = getBlacklistWordsFromFile(blpath)
-            reason = censorBySubstring(reason, blacklist)
+            blacklist = getBlacklistWordsFromFile(blpath)       # instantiate the blacklist from the proper path
+            reason = censorBySubstring(reason, blacklist)       # censor the content by filtering out words and replacing them with asterisks 
 
             if not secret:
                 flash('Invalid ID.', 'error')
             elif not Reported.query.filter_by(id=id).first():
-                if emailFlag:
+                if emailFlag: # instantiate with email
                     report = Reported(id=id, content=secret.content, reason=reason, count=1, email=email)
-                else:
+                else:         #              without email
                     report = Reported(id=id, content=secret.content, reason=reason, count=1)
 
                 db.session.add(report)
