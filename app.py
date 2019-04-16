@@ -179,14 +179,14 @@ def add():
         else:
             content = request.form.get('ckeditor')
             blpath = basedir + "/blacklist.txt"
-            blacklist = getBlacklistWordsFromFile(blpath)
-            content = censorBySubstring(content, blacklist)
+            blacklist = getBlacklistWordsFromFile(blpath)   # instantiate the blacklist from the proper path
+            content = censorBySubstring(content, blacklist) # censor the content by filtering out words and replacing them with asterisks
             flag = True
             if content.find(".jpg") != -1 or content.find(".jpeg") != -1 or content.find(".gif") != -1 or content.find(".png") != -1:
                 flag = False
 
-            email = request.form.get('emailTextFieldAdd')
-            emailFlag = False
+            email = request.form.get('emailTextFieldAdd')   # get the email from the optional email text field from add.html
+            emailFlag = False                               # check if email was submitted and set emailFlag
             if email == "":
                 emailFlag = False
                 # flash("email field is empty!")
@@ -200,6 +200,7 @@ def add():
 
             # Redirect to either the admin or the DB
             if isPostable(content) and flag and emailFlag is False:
+                # Directly post to the wall
                 post = Secrets(content=content)
                 db.session.add(post)
                 db.session.flush()
@@ -207,6 +208,7 @@ def add():
                 flash('Post Success!')
                 return redirect(url_for('wall'))
             else:
+                # Send the content to the queue so the admin can review and confirm the content
                 post = Queue(content=content, email=email)
                 db.session.add(post)
                 db.session.flush()
@@ -226,23 +228,23 @@ def report():
             id = request.form['id']
             secret = Secrets.query.filter_by(id=id).first()
             reason = request.form.get('ckeditor')
-            email = request.form.get("emailTextFieldReport")
-            emailFlag = False
+            email = request.form.get("emailTextFieldReport")    # get the email from the optional email text field from report.html
+            emailFlag = False                                   # check if email was submitted and set emailFlag
             if email == "":
                 emailFlag = False
             else:
                 emailFlag = True
 
             blpath = basedir + "/blacklist.txt"
-            blacklist = getBlacklistWordsFromFile(blpath)
-            reason = censorBySubstring(reason, blacklist)
+            blacklist = getBlacklistWordsFromFile(blpath)       # instantiate the blacklist from the proper path
+            reason = censorBySubstring(reason, blacklist)       # censor the content by filtering out words and replacing them with asterisks 
 
             if not secret:
                 flash('Invalid ID.', 'error')
             elif not Reported.query.filter_by(id=id).first():
-                if emailFlag:
+                if emailFlag: # instantiate with email
                     report = Reported(id=id, content=secret.content, reason=reason, count=1, email=email)
-                else:
+                else:         #              without email
                     report = Reported(id=id, content=secret.content, reason=reason, count=1)
 
                 db.session.add(report)
