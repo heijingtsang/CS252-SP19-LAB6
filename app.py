@@ -160,6 +160,17 @@ def secret_details(sid):
     return render_template('secret_details.html', secret=Secrets.query.filter_by(id=sid).first())
 
 
+@app.route('/wall/<int:sid>/like')
+def like(sid):
+    post = Secrets.query.filter_by(id=sid).first()
+    
+    like = post.like + 1
+    post = Secrets.query.filter_by(id=sid).update(dict(like=like))
+    db.session.commit()
+    
+    return redirect(url_for('wall'))
+
+
 @app.route('/add', methods=['POST', 'GET'])
 def add():
     if request.method == 'POST':
