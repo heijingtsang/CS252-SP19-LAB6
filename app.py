@@ -362,13 +362,16 @@ def ignoreReported(sid, email):
 
     emailDest = Reported.query.filter_by(email=email).first()
 
+    # parse the email by spliting the email with the colon separator
+    emailList = emailDest.email.split("::")
+
     db.session.delete(post)
     db.session.flush()
     db.session.commit()
     message = 'Report of #' + str(sid) + ' has been ignored.'
     flash(message)
 
-    if emailDest != "":
+    if emailDest.email != "":
         msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[emailDest])
         msg.body = """We are sending this email to inform that your post has been reported by other users 
             and after the examinations from the admins, we decided to keep your post on the wall"""
