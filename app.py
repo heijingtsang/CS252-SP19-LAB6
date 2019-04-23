@@ -18,7 +18,7 @@ app.secret_key = "CS252 Spring 2019 Lab 6"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cs252sp19lab6.db'
 app.config['CKEDITOR_SERVE_LOCAL'] = True
 app.config['CKEDITOR_ENABLE_CSRF'] = True
-app.config['CKEDITOR_EXTRA_PLUGINS'] = ['image2']
+app.config['CKEDITOR_EXTRA_PLUGINS'] = ['image2', 'emoji']
 app.config['SECRET_KEY'] = 'CS252 Spring 2019 Lab 6'
 app.config['CKEDITOR_HEIGHT'] = 400
 app.config['CKEDITOR_FILE_UPLOADER'] = 'upload'
@@ -58,24 +58,30 @@ class Admin(db.Model, UserMixin):
 class Secrets(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     content = db.Column(db.Text, nullable=False)
-    submit_time = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow())
-    post_time = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow())
+    submit_time = db.Column(db.DateTime, nullable=False)
+    post_time = db.Column(db.DateTime, nullable=False)
+    like = db.Column(db.Integer, nullable=False)
 
-    def __init__(self, content):
+    def __init__(self, content, submit_time, post_time, like):
         self.content = content
+        self.submit_time = submit_time
+        self.post_time = post_time
+        self.like = like
 
 
 class Queue(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     content = db.Column(db.Text, nullable=False)
-    submit_time = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow())
+    submit_time = db.Column(db.DateTime, nullable=False)
     email = db.Column(db.Text)
 
-    def __init__(self, content):
+    def __init__(self, content, submit_time):
         self.content = content
+        self.submit_time = submit_time
 
-    def __init__(self, content, email):
+    def __init__(self, content, submit_time, email):
         self.content = content
+        self.submit_time = submit_time
         self.email = email
 
 class Reported(db.Model):
@@ -201,7 +207,7 @@ def add():
             # Redirect to either the admin or the DB
             if isPostable(content) and flag and emailFlag is False:
                 # Directly post to the wall
-                post = Secrets(content=content)
+                post = Secrets(content=content, submit_time=datetime.datetime.utcnow(), post_time=datetime.datetime.utcnow(), like=0)
                 db.session.add(post)
                 db.session.flush()
                 db.session.commit()
@@ -209,7 +215,7 @@ def add():
                 return redirect(url_for('wall'))
             else:
                 # Send the content to the queue so the admin can review and confirm the content
-                post = Queue(content=content, email=email)
+                post = Queue(content=content, submit_time=datetime.datetime.utcnow(), email=email)
                 db.session.add(post)
                 db.session.flush()
                 db.session.commit()
@@ -334,7 +340,7 @@ def deleteFromReported(sid, email):
     if emailDest != "":
         msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[emailDest])
         msg.body = """We are sending this email to inform that your post has been reported by other users 
-        and after the examinations from the admins, we decided to delete your post"""
+        and after the examinations from the admins, we have decided to delete your post"""
         mail.send(msg)
 
     return redirect(url_for('adminReported'))
@@ -404,8 +410,7 @@ def migrateFromQueue(qid, email):
     postID = q_post.id
 
     content = q_post.content
-    s_post = Secrets(content=content)
-    s_post.post_time = datetime.datetime.utcnow()
+    s_post = Secrets(content=content, submit_time=q_post.submit_time, post_time=datetime.datetime.utcnow(), like=0)
     db.session.add(s_post)
     db.session.flush()
     db.session.delete(q_post)
