@@ -262,7 +262,12 @@ def report():
 
                 count = report.count + 1
                 reason = report.reason + ', ' + reason
-                new_report = Reported(id=id, content=secret.content, reason=reason, count=count) # not sure about the email attribute here
+                if emailFlag:
+                    prevEmails = report.email
+                    newEmails = prevEmails + "::" + email
+                    new_report = Reported(id=id, content=secret.content, reason=reason, count=count, email=newEmails)
+                else:
+                    new_report = Reported(id=id, content=secret.content, reason=reason, count=count)
 
                 db.session.delete(report)
                 db.session.flush()
