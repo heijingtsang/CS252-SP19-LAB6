@@ -452,6 +452,13 @@ def createAccount():
             admin.set_password(password)
             db.session.add(admin)
             db.session.commit()
+
+            # notify through email
+            msg = Message("Hello from Purdue Secrets!", sender='purdueSecrets2019@gmail.com', recipients=[email])
+            msg.body = """We are sending this email to inform you that a new admin account has been created. The current password for the account is 
+            """ + password + "." + "We do encourage you to change your password since this is the creation of a new account."
+            mail.send(msg)
+
             flash('New account has been created.')
             return redirect(url_for('adminQueue'))
 
