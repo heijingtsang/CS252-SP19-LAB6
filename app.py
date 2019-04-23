@@ -372,7 +372,7 @@ def ignoreReported(sid, email):
     flash(message)
 
     if emailDest.email != "":
-        msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[emailDest])
+        msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=emailList)
         msg.body = """We are sending this email to inform that your post has been reported by other users 
             and after the examinations from the admins, we decided to keep your post on the wall"""
         mail.send(msg)
