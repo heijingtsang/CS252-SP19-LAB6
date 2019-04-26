@@ -4,15 +4,17 @@
     {{ super() }}
 {% endblock %}
 {% block body %}
-    <form method="post">
+    <form class="ui form" method="post">
         <h3></h3>
         <h4>Write a secret, and post it by clicking the submit button!</h4>
         <h3></h3>
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         {{ ckeditor.create() }}
         <h3></h3>
-        Your email (Optional):
-        <input type="email" name="emailTextFieldAdd" placeholder="yourEmail@gmail.com">
+        <div class="field">
+            <label>Your email (Optional):</label>
+            <input type="email" name="emailTextFieldAdd" placeholder="yourEmail@gmail.com">
+        </div>
         <h3></h3>
         <input class="ui teal submit button" type="submit" value="Submit">
     </form>

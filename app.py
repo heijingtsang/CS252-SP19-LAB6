@@ -1,14 +1,14 @@
 import datetime, os, uuid
 from flask import Flask, render_template, redirect, flash, url_for, request, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
-#from flask_talisman import Talisman
+# from flask_talisman import Talisman
 from flask_login import current_user, login_user, LoginManager, logout_user, login_required, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_ckeditor import CKEditor, upload_success, upload_fail
 from flask_wtf.csrf import CSRFProtect
-#from flask_sslify import SSLify
+# from flask_sslify import SSLify
 from flask_mail import Mail, Message
-import password
+
 
 basedir = os.path.dirname(__file__)
 blacklist = []
@@ -23,20 +23,22 @@ app.config['SECRET_KEY'] = 'CS252 Spring 2019 Lab 6'
 app.config['CKEDITOR_HEIGHT'] = 400
 app.config['CKEDITOR_FILE_UPLOADER'] = 'upload'
 app.config['MAX_CONTENT_LENGTH'] = 4 * 1024 * 1024
-#Talisman(app)
-#sslify = SSLify(app)
+# Talisman(app)
+# sslify = SSLify(app)
 db = SQLAlchemy(app)
 csrf = CSRFProtect(app)
 login_manager = LoginManager(app)
 login_manager.session_protection = "strong"
 ckeditor = CKEditor(app)
 
-app.config['MAIL_SERVER']='smtp.gmail.com'
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USERNAME'] = 'purdueSecrets2019@gmail.com'
+app.config['MAIL_PASSWORD'] = 'bGF3c29uQjEzMUhlaUppbmdKYW1lcw=='
 app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = True
 mail = Mail(app)
+
 
 class Admin(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -61,12 +63,14 @@ class Secrets(db.Model):
     submit_time = db.Column(db.DateTime, nullable=False)
     post_time = db.Column(db.DateTime, nullable=False)
     like = db.Column(db.Integer, nullable=False)
+    email = db.Column(db.Text)
 
-    def __init__(self, content, submit_time, post_time, like):
+    def __init__(self, content, submit_time, post_time, like, email):
         self.content = content
         self.submit_time = submit_time
         self.post_time = post_time
         self.like = like
+        self.email = email
 
 
 class Queue(db.Model):
@@ -75,14 +79,11 @@ class Queue(db.Model):
     submit_time = db.Column(db.DateTime, nullable=False)
     email = db.Column(db.Text)
 
-    def __init__(self, content, submit_time):
-        self.content = content
-        self.submit_time = submit_time
-
     def __init__(self, content, submit_time, email):
         self.content = content
         self.submit_time = submit_time
         self.email = email
+
 
 class Reported(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
@@ -91,12 +92,6 @@ class Reported(db.Model):
     count = db.Column(db.Integer, nullable=False)
     email = db.Column(db.Text)
 
-    def __init__(self, id, content, reason, count):
-        self.id = id
-        self.content = content
-        self.reason = reason
-        self.count = count
-
     def __init__(self, id, content, reason, count, email):
         self.id = id
         self.content = content
@@ -104,7 +99,10 @@ class Reported(db.Model):
         self.count = count
         self.email = email
 
+
 db.create_all()
+
+
 #master_admin = Admin('admin', 'tsangh@purdue.edu')
 #master_admin.set_password('password')
 #db.session.add(master_admin)
@@ -161,19 +159,64 @@ def wall():
     return render_template('wall.html', secrets=secrets)
 
 
-@app.route('/wall/<int:sid>')
+@app.route('/wall/<int:sid>', methods=['POST', 'GET'])
 def secret_details(sid):
+    if request.method == 'POST':
+        if not request.form.get('ckeditor'):
+            flash('Reply cannot be empty.', 'error')
+        else:
+            content = "Re: " + "<a href=\"https://tsangh.pythonanywhere.com/wall/" + str(sid) + "\">#" + str(sid) + "</a><p></p>" + request.form.get('ckeditor')
+            blpath = basedir + '/blacklist.txt'
+            blacklist = getBlacklistWordsFromFile(blpath)
+            content = censorBySubstring(content, blacklist)
+            flag = True
+            if content.find(".jpg") != -1 or content.find(".jpeg") != -1 or content.find(".gif") != -1 or content.find(
+                    ".png") != -1:
+                flag = False
+
+            email = request.form.get(
+                'emailTextFieldAdd')  # get the email from the optional email text field
+            emailFlag = False  # check if email was submitted and set emailFlag
+            if not email == "":
+                emailFlag = True
+
+            # Redirect to either the admin or the DB
+            if isPostable(content) and flag:
+                # Directly post to the wall
+                if emailFlag == False:
+                    post = Secrets(content=content, submit_time=datetime.datetime.utcnow(),
+                               post_time=datetime.datetime.utcnow(), like=0, email=None)
+                else:
+                    post = Secrets(content=content, submit_time=datetime.datetime.utcnow(),
+                               post_time=datetime.datetime.utcnow(), like=0, email=email)
+                db.session.add(post)
+                db.session.flush()
+                db.session.commit()
+                flash('Post Success!')
+                return redirect(url_for('wall'))
+            else:
+                # Send the content to the queue so the admin can review and confirm the content
+                if emailFlag == False:
+                    post = Queue(content=content, submit_time=datetime.datetime.utcnow(), email=None)
+                else:
+                    post = Queue(content=content, submit_time=datetime.datetime.utcnow(), email=email)
+                db.session.add(post)
+                db.session.flush()
+                db.session.commit()
+                flash('Post has been sent to the administrator.')
+                return redirect(url_for('wall'))
+
     return render_template('secret_details.html', secret=Secrets.query.filter_by(id=sid).first())
 
 
 @app.route('/wall/<int:sid>/like')
 def like(sid):
     post = Secrets.query.filter_by(id=sid).first()
-    
+
     like = post.like + 1
     post = Secrets.query.filter_by(id=sid).update(dict(like=like))
     db.session.commit()
-    
+
     return redirect(url_for('wall'))
 
 
@@ -185,18 +228,18 @@ def add():
         else:
             content = request.form.get('ckeditor')
             blpath = basedir + "/blacklist.txt"
-            blacklist = getBlacklistWordsFromFile(blpath)   # instantiate the blacklist from the proper path
-            content = censorBySubstring(content, blacklist) # censor the content by filtering out words and replacing them with asterisks
+            blacklist = getBlacklistWordsFromFile(blpath)  # instantiate the blacklist from the proper path
+            content = censorBySubstring(content,
+                                        blacklist)  # censor the content by filtering out words and replacing them with asterisks
             flag = True
-            if content.find(".jpg") != -1 or content.find(".jpeg") != -1 or content.find(".gif") != -1 or content.find(".png") != -1:
+            if content.find(".jpg") != -1 or content.find(".jpeg") != -1 or content.find(".gif") != -1 or content.find(
+                    ".png") != -1:
                 flag = False
 
-            email = request.form.get('emailTextFieldAdd')   # get the email from the optional email text field from add.html
-            emailFlag = False                               # check if email was submitted and set emailFlag
-            if email == "":
-                emailFlag = False
-                # flash("email field is empty!")
-            else:
+            email = request.form.get(
+                'emailTextFieldAdd')  # get the email from the optional email text field from add.html
+            emailFlag = False  # check if email was submitted and set emailFlag
+            if not email == "":
                 emailFlag = True
                 # flash("email field is not empty" + email)
 
@@ -205,9 +248,14 @@ def add():
             # UNLESS we are able to get rid of the wrapping tags
 
             # Redirect to either the admin or the DB
-            if isPostable(content) and flag and emailFlag is False:
+            if isPostable(content) and flag:
                 # Directly post to the wall
-                post = Secrets(content=content, submit_time=datetime.datetime.utcnow(), post_time=datetime.datetime.utcnow(), like=0)
+                if emailFlag is False:
+                    post = Secrets(content=content, submit_time=datetime.datetime.utcnow(),
+                               post_time=datetime.datetime.utcnow(), like=0, email=None)
+                else:
+                    post = Secrets(content=content, submit_time=datetime.datetime.utcnow(),
+                                   post_time=datetime.datetime.utcnow(), like=0, email=email)
                 db.session.add(post)
                 db.session.flush()
                 db.session.commit()
@@ -215,7 +263,10 @@ def add():
                 return redirect(url_for('wall'))
             else:
                 # Send the content to the queue so the admin can review and confirm the content
-                post = Queue(content=content, submit_time=datetime.datetime.utcnow(), email=email)
+                if emailFlag is False:
+                    post = Queue(content=content, submit_time=datetime.datetime.utcnow(), email=None)
+                else:
+                    post = Queue(content=content, submit_time=datetime.datetime.utcnow(), email=email)
                 db.session.add(post)
                 db.session.flush()
                 db.session.commit()
@@ -234,24 +285,26 @@ def report():
             id = request.form['id']
             secret = Secrets.query.filter_by(id=id).first()
             reason = request.form.get('ckeditor')
-            email = request.form.get("emailTextFieldReport")    # get the email from the optional email text field from report.html
-            emailFlag = False                                   # check if email was submitted and set emailFlag
+            email = request.form.get(
+                "emailTextFieldReport")  # get the email from the optional email text field from report.html
+            emailFlag = False  # check if email was submitted and set emailFlag
             if email == "":
                 emailFlag = False
             else:
                 emailFlag = True
 
             blpath = basedir + "/blacklist.txt"
-            blacklist = getBlacklistWordsFromFile(blpath)       # instantiate the blacklist from the proper path
-            reason = censorBySubstring(reason, blacklist)       # censor the content by filtering out words and replacing them with asterisks 
+            blacklist = getBlacklistWordsFromFile(blpath)  # instantiate the blacklist from the proper path
+            reason = censorBySubstring(reason,
+                                       blacklist)  # censor the content by filtering out words and replacing them with asterisks
 
             if not secret:
                 flash('Invalid ID.', 'error')
             elif not Reported.query.filter_by(id=id).first():
-                if emailFlag: # instantiate with email
+                if emailFlag:  # instantiate with email
                     report = Reported(id=id, content=secret.content, reason=reason, count=1, email=email)
-                else:         #              without email
-                    report = Reported(id=id, content=secret.content, reason=reason, count=1)
+                else:  # without email
+                    report = Reported(id=id, content=secret.content, reason=reason, count=1, email=None)
 
                 db.session.add(report)
                 db.session.commit()
@@ -261,13 +314,13 @@ def report():
                 report = Reported.query.filter_by(id=id).first()
 
                 count = report.count + 1
-                reason = report.reason + ', ' + reason
+                reason = report.reason + reason
                 if emailFlag:
                     prevEmails = report.email
                     newEmails = prevEmails + "::" + email
                     new_report = Reported(id=id, content=secret.content, reason=reason, count=count, email=newEmails)
                 else:
-                    new_report = Reported(id=id, content=secret.content, reason=reason, count=count)
+                    new_report = Reported(id=id, content=secret.content, reason=reason, count=count, email=report.email)
 
                 db.session.delete(report)
                 db.session.flush()
@@ -325,14 +378,14 @@ def adminLogout():
 
 @app.route('/admin/reported/<int:sid>/delete')
 @login_required
-def deleteFromReported(sid, email):
+def deleteFromReported(sid):
     r_post = Reported.query.filter_by(id=sid).first()
 
     if r_post is None:
         flash('This post has already been handled.', 'info')
         return redirect(url_for('adminReported'))
 
-    emailDest = Reported.query.filter_by(email=email).first()
+    email = r_post.email
 
     s_post = Secrets.query.filter_by(id=sid).first()
     db.session.delete(s_post)
@@ -342,8 +395,8 @@ def deleteFromReported(sid, email):
     db.session.commit()
     flash('Post was successfully deleted.')
 
-    if emailDest != "":
-        msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[emailDest])
+    if not email == "":
+        msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[email])
         msg.body = """We are sending this email to inform that your post has been reported by other users 
         and after the examinations from the admins, we have decided to delete your post"""
         mail.send(msg)
@@ -353,17 +406,17 @@ def deleteFromReported(sid, email):
 
 @app.route('/admin/reported/<int:sid>/ignore')
 @login_required
-def ignoreReported(sid, email):
+def ignoreReported(sid):
     post = Reported.query.filter_by(id=sid).first()
 
     if post is None:
         flash('This post has already been handled.', 'info')
         return redirect(url_for('adminReported'))
 
-    emailDest = Reported.query.filter_by(email=email).first()
+    email = post.email
 
     # parse the email by spliting the email with the colon separator
-    emailList = emailDest.email.split("::")
+    emailList = email.split("::")
 
     db.session.delete(post)
     db.session.flush()
@@ -371,7 +424,7 @@ def ignoreReported(sid, email):
     message = 'Report of #' + str(sid) + ' has been ignored.'
     flash(message)
 
-    if emailDest.email != "":
+    if not email == "":
         msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=emailList)
         msg.body = """We are sending this email to inform that your post has been reported by other users 
             and after the examinations from the admins, we decided to keep your post on the wall"""
@@ -380,25 +433,24 @@ def ignoreReported(sid, email):
     return redirect(url_for('adminReported'))
 
 
-
 @app.route('/admin/queue/<int:qid>/delete')
 @login_required
-def deleteFromQueue(qid, email):
+def deleteFromQueue(qid):
     post = Queue.query.filter_by(id=qid).first()
 
     if post is None:
         flash('This post has already been handled.', 'info')
         return redirect(url_for('adminQueue'))
 
-    emailDest = Queue.query.filter_by(email=email).first()
+    email = post.email
 
     db.session.delete(post)
     db.session.flush()
     db.session.commit()
     flash('Post was successfully deleted.')
 
-    if emailDest != "":
-        msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[emailDest])
+    if not email == "":
+        msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[email])
         msg.body = """We are sending this email to inform that after the examinations from the admins, we decided to delete your post"""
         mail.send(msg)
 
@@ -407,18 +459,18 @@ def deleteFromQueue(qid, email):
 
 @app.route('/admin/queue/<int:qid>/migrate')
 @login_required
-def migrateFromQueue(qid, email):
+def migrateFromQueue(qid):
     q_post = Queue.query.filter_by(id=qid).first()
 
     if q_post is None:
         flash('This post has already been handled.', 'info')
         return redirect(url_for('adminQueue'))
 
-    emailDest = Queue.query.filter_by(email=email).first()
+    email = q_post.email
     postID = q_post.id
 
     content = q_post.content
-    s_post = Secrets(content=content, submit_time=q_post.submit_time, post_time=datetime.datetime.utcnow(), like=0)
+    s_post = Secrets(content=content, submit_time=q_post.submit_time, post_time=datetime.datetime.utcnow(), like=0, email=email)
     db.session.add(s_post)
     db.session.flush()
     db.session.delete(q_post)
@@ -426,8 +478,8 @@ def migrateFromQueue(qid, email):
     db.session.commit()
     flash('Post was approved, and pushed to the wall.')
 
-    if emailDest != "":
-        msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[emailDest])
+    if not email == "":
+        msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[email])
         msg.body = """We are sending this email to inform that after the examinations from the admins, we decided to approve your post.\n
         The link to your approve post: https://tsangh.pythonanywhere.com/wall/""" + str(postID)
         mail.send(msg)
@@ -439,7 +491,8 @@ def migrateFromQueue(qid, email):
 @login_required
 def createAccount():
     if request.method == 'POST':
-        if not request.form['username'] or not request.form['password'] or not request.form['confirm_password'] or not request.form['email']:
+        if not request.form['username'] or not request.form['password'] or not request.form['confirm_password'] or not \
+        request.form['email']:
             flash('Please enter all the fields accordingly.', 'error')
         elif not request.form['password'] == request.form['confirm_password']:
             message = 'Passwords don\'t match. Please enter again.'
@@ -456,7 +509,7 @@ def createAccount():
             # notify through email
             msg = Message("Hello from Purdue Secrets!", sender='purdueSecrets2019@gmail.com', recipients=[email])
             msg.body = """We are sending this email to inform you that a new admin account has been created. The current password for the account is 
-            """ + password + "." + "We do encourage you to change your password since this is the creation of a new account."
+            """ + password + ". " + "We do encourage you to change your password since this is the creation of a new account."
             mail.send(msg)
 
             flash('New account has been created.')
