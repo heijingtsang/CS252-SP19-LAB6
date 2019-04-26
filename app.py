@@ -210,14 +210,18 @@ def secret_details(sid):
 
 
 @app.route('/wall/<int:sid>/like')
-def like(sid):
+@app.route('/wall/<int:sid>/<int:detail>/like')
+def like(sid, detail):
     post = Secrets.query.filter_by(id=sid).first()
 
     like = post.like + 1
     post = Secrets.query.filter_by(id=sid).update(dict(like=like))
     db.session.commit()
 
-    return redirect(url_for('wall'))
+    if detail == 1:
+        return redirect(url_for('wall'))
+    else:
+        return redirect(url_for('secret_details', sid=sid))
 
 
 @app.route('/add', methods=['POST', 'GET'])
@@ -386,6 +390,7 @@ def deleteFromReported(sid):
         return redirect(url_for('adminReported'))
 
     email = r_post.email
+    print(email)
 
     s_post = Secrets.query.filter_by(id=sid).first()
     db.session.delete(s_post)
@@ -395,7 +400,7 @@ def deleteFromReported(sid):
     db.session.commit()
     flash('Post was successfully deleted.')
 
-    if not email == "":
+    if email is not None:
         msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[email])
         msg.body = """We are sending this email to inform that your post has been reported by other users 
         and after the examinations from the admins, we have decided to delete your post"""
@@ -414,6 +419,7 @@ def ignoreReported(sid):
         return redirect(url_for('adminReported'))
 
     email = post.email
+    print(email)
 
     # parse the email by spliting the email with the colon separator
     emailList = email.split("::")
@@ -478,7 +484,7 @@ def migrateFromQueue(qid):
     db.session.commit()
     flash('Post was approved, and pushed to the wall.')
 
-    if not email == "":
+    if email is not None:
         msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[email])
         msg.body = """We are sending this email to inform that after the examinations from the admins, we decided to approve your post.\n
         The link to your approve post: https://tsangh.pythonanywhere.com/wall/""" + str(postID)
