@@ -35,7 +35,6 @@
                 <td>{{ post['id'] }}</td>
                 <td>{{ post['content']|safe }}</td>
                 <td>{{ post['submit_time'] }}</td>
-                <td>{{ post['email']}}</td>
                 <td>
                     <a href="{{ url_for('migrateFromQueue', qid=post['id']) }}">Approve</a>
                     <p></p>

@@ -37,7 +37,6 @@
                 <td>{{ post['content']|safe }}</td>
                 <td>{{ post['reason']|safe }}</td>
                 <td>{{ post['count'] }}</td>
-                <td>{{ post['email'] }}</td>
                 <td>
                     <a href="{{ url_for('deleteFromReported', sid=post['id']) }}">Delete</a>
                     <p></p>

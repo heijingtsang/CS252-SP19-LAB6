@@ -292,9 +292,7 @@ def report():
             email = request.form.get(
                 "emailTextFieldReport")  # get the email from the optional email text field from report.html
             emailFlag = False  # check if email was submitted and set emailFlag
-            if email == "":
-                emailFlag = False
-            else:
+            if email is not None:
                 emailFlag = True
 
             blpath = basedir + "/blacklist.txt"
@@ -389,10 +387,11 @@ def deleteFromReported(sid):
         flash('This post has already been handled.', 'info')
         return redirect(url_for('adminReported'))
 
-    email = r_post.email
-    print(email)
+    r_email = r_post.email
+    emailList = r_email.split("::")
 
     s_post = Secrets.query.filter_by(id=sid).first()
+    s_email = s_post.email
     db.session.delete(s_post)
     db.session.flush()
     db.session.delete(r_post)
@@ -400,10 +399,18 @@ def deleteFromReported(sid):
     db.session.commit()
     flash('Post was successfully deleted.')
 
-    if email is not None:
-        msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[email])
-        msg.body = """We are sending this email to inform that your post has been reported by other users 
-        and after the examinations from the admins, we have decided to delete your post"""
+    if r_email is not None:
+        msg = Message('Thank you for Reporting. - Purdue Secrets', sender='purdueSecrets2019@gmail.com')
+        for i in emailList:
+            msg.add_recipient(i)
+        msg.body = """We are sending this email to inform that the reported post has been removed from Purdue Secrets,
+        thank you for reporting!"""
+        mail.send(msg)
+
+    if s_email is not None:
+        msg = Message('Your Secret Post has been Reported. - Purdue Secrets', sender='purduesecrets2019@gmail.com', recipients=[s_email])
+        msg.body = """We are sending this email to inform that your post has been reported by other users
+        and after the examinations from the admins, we have decieded to delete your post."""
         mail.send(msg)
 
     return redirect(url_for('adminReported'))
@@ -430,8 +437,10 @@ def ignoreReported(sid):
     message = 'Report of #' + str(sid) + ' has been ignored.'
     flash(message)
 
-    if not email == "":
-        msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=emailList)
+    if email is not None:
+        msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com')
+        for i in emailList:
+            msg.add_recipient(i)
         msg.body = """We are sending this email to inform that your post has been reported by other users 
             and after the examinations from the admins, we decided to keep your post on the wall"""
         mail.send(msg)
@@ -456,7 +465,7 @@ def deleteFromQueue(qid):
     flash('Post was successfully deleted.')
 
     if not email == "":
-        msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[email])
+        msg = Message('Secret Post has been Denied. - Purdue Secrets', sender='purdueSecrets2019@gmail.com', recipients=[email])
         msg.body = """We are sending this email to inform that after the examinations from the admins, we decided to delete your post"""
         mail.send(msg)
 
@@ -485,7 +494,7 @@ def migrateFromQueue(qid):
     flash('Post was approved, and pushed to the wall.')
 
     if email is not None:
-        msg = Message('Hello from Purdue Secrets!', sender='purdueSecrets2019@gmail.com', recipients=[email])
+        msg = Message('Secret Post has been Approved! - Purdue Secrets', sender='purdueSecrets2019@gmail.com', recipients=[email])
         msg.body = """We are sending this email to inform that after the examinations from the admins, we decided to approve your post.\n
         The link to your approve post: https://tsangh.pythonanywhere.com/wall/""" + str(postID)
         mail.send(msg)
